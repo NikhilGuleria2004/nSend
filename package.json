@@ -1,0 +1,22 @@
+{
+  "name": "p2p-send",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --root frontend",
+    "build": "astro build --root frontend",
+    "start": "tsx backend/server.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "@hono/node-ws": "^1.1.0",
+    "astro": "^7.2.9",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.4.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

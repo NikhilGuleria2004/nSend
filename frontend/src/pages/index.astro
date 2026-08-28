@@ -1,0 +1,141 @@
+---
+import '../styles/global.css';
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>nsend // sender</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body class="min-h-screen bg-terminal-bg text-terminal-text font-mono antialiased">
+  <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl">
+      <div class="border border-terminal-border bg-terminal-surface">
+        <div class="flex items-center gap-2 px-4 py-2.5 border-b border-terminal-border">
+          <span class="w-2.5 h-2.5 rounded-full bg-terminal-red"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-terminal-amber"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-terminal-green"></span>
+          <span class="ml-3 text-[11px] text-terminal-text/50 tracking-wide">sender</span>
+        </div>
+
+        <div class="p-6 md:p-8 space-y-5">
+          <div class="space-y-1.5">
+            <h1 class="text-lg font-medium tracking-tight text-green">Send files, peer-to-peer</h1>
+            <p class="text-sm text-terminal-text/70 leading-relaxed max-w-lg">
+              Pick files, click <span class="text-green">Send</span>, share the link. Files stream directly to the receiver's browser — never stored anywhere in between.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-[11px] uppercase tracking-widest text-terminal-text/40">Select files</label>
+            <input type="file" id="files" multiple class="block w-full text-sm text-terminal-text/80 file:mr-3 file:py-1.5 file:px-3 file:border file:border-terminal-border file:text-[11px] file:font-normal file:bg-terminal-bg file:text-terminal-text hover:file:border-green file:cursor-pointer cursor-pointer file:transition-colors" />
+          </div>
+
+          <button id="send" class="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-normal text-terminal-bg bg-green hover:bg-green-dim transition-colors">
+            <span>Send</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+
+          <div class="space-y-1.5 pt-1">
+            <div id="status" class="text-[13px] text-terminal-amber h-4"></div>
+            <div id="link" class="text-[13px] break-all"></div>
+          </div>
+        </div>
+
+        <div class="px-6 py-2.5 border-t border-terminal-border bg-terminal-bg/50">
+          <p class="text-[10px] text-terminal-text/30 tracking-wide">server relays only signaling data (SDP/ICE) — file data is peer-to-peer</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { connectSignaling, newPeerConnection } from '../lib/rtc';
+
+    const filesInput = document.getElementById('files') as HTMLInputElement;
+    const sendBtn = document.getElementById('send') as HTMLButtonElement;
+    const statusEl = document.getElementById('status') as HTMLElement;
+    const linkEl = document.getElementById('link') as HTMLElement;
+
+    const CHUNK_SIZE = 16 * 1024;
+
+    sendBtn.addEventListener('click', async () => {
+      const files = filesInput.files;
+      if (!files || files.length === 0) {
+        statusEl.textContent = 'Choose at least one file.';
+        statusEl.className = 'text-[13px] text-terminal-red h-4';
+        return;
+      }
+      sendBtn.disabled = true;
+
+      const room = crypto.randomUUID();
+      const link = `${location.origin}/r?id=${room}`;
+      linkEl.innerHTML = `Share this link with the receiver: <a href="${link}" class="text-green underline underline-offset-2 hover:text-green-dim transition-colors">${link}</a>`;
+      statusEl.textContent = 'Waiting for the receiver to open the link…';
+      statusEl.className = 'text-[13px] text-terminal-amber h-4';
+
+      const ws = connectSignaling(room, 'sender');
+      const pc = newPeerConnection();
+      const channel = pc.createDataChannel('files');
+      channel.binaryType = 'arraybuffer';
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          ws.send(JSON.stringify({ type: 'signal', data: { candidate: e.candidate } }));
+        }
+      };
+
+      ws.onmessage = async (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.type === 'peer-joined') {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          ws.send(JSON.stringify({ type: 'signal', data: { sdp: offer } }));
+        } else if (msg.type === 'signal') {
+          const { sdp, candidate } = msg.data;
+          if (sdp) await pc.setRemoteDescription(sdp);
+          if (candidate) await pc.addIceCandidate(candidate);
+        } else if (msg.type === 'peer-left') {
+          statusEl.textContent = 'Receiver disconnected.';
+          statusEl.className = 'text-[13px] text-terminal-red h-4';
+        }
+      };
+
+      channel.onopen = async () => {
+        statusEl.textContent = 'Connected. Sending…';
+        statusEl.className = 'text-[13px] text-green h-4';
+        const fileList = Array.from(files);
+        channel.send(JSON.stringify({
+          type: 'meta',
+          files: fileList.map((f) => ({ name: f.name, size: f.size, type: f.type }))
+        }));
+        for (let i = 0; i < fileList.length; i++) {
+          await sendFile(channel, fileList[i], i);
+        }
+        channel.send(JSON.stringify({ type: 'done' }));
+        statusEl.textContent = 'All files sent.';
+        statusEl.className = 'text-[13px] text-green h-4';
+      };
+    });
+
+    async function sendFile(channel: RTCDataChannel, file: File, index: number) {
+      channel.send(JSON.stringify({ type: 'file-start', index }));
+      const buf = await file.arrayBuffer();
+      let offset = 0;
+      while (offset < buf.byteLength) {
+        if (channel.bufferedAmount > 8 * CHUNK_SIZE) {
+          await new Promise((r) => setTimeout(r, 10));
+          continue;
+        }
+        channel.send(buf.slice(offset, offset + CHUNK_SIZE));
+        offset += CHUNK_SIZE;
+      }
+      channel.send(JSON.stringify({ type: 'file-end', index }));
+    }
+  </script>
+</body>
+</html>
