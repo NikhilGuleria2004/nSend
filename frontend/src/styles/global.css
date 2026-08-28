@@ -1,32 +1,49 @@
 @import "tailwindcss";
 
 @theme {
-  --color-terminal-bg: #0c0c0c;
-  --color-terminal-surface: #111111;
-  --color-terminal-border: #1f1f1f;
-  --color-terminal-text: #8b8b8b;
-  --color-terminal-green: #4ade80;
-  --color-terminal-green-dim: #3d9e6e;
-  --color-terminal-amber: #d4a053;
-  --color-terminal-red: #c45c5c;
-  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+  --color-bg: #ffffff;
+  --color-surface: #f5f5f5;
+  --color-surface-hover: #e5e5e5;
+  --color-border: #000000;
+  --color-border-subtle: #333333;
+  --color-text: #000000;
+  --color-text-muted: #666666;
+  --color-text-dim: #999999;
+  --color-accent: #000000;
+  --color-accent-hover: #333333;
+  --color-amber: #000000;
+  --color-red: #000000;
+  --font-family-sans: 'Courier New', Courier, monospace;
+  --font-family-mono: 'Courier New', Courier, monospace;
 }
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    background-color: var(--color-terminal-bg);
-    color: var(--color-terminal-text);
-    font-family: var(--font-family-mono);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-family-sans);
+    line-height: 1.6;
+    min-height: 100vh;
+    margin: 0;
   }
 
   ::selection {
-    background-color: var(--color-terminal-green);
-    color: var(--color-terminal-bg);
+    background-color: var(--color-text);
+    color: var(--color-bg);
   }
 }
 
 @layer utilities {
-  .text-green { color: var(--color-terminal-green); }
-  .bg-green { background-color: var(--color-terminal-green); }
-  .border-green { border-color: var(--color-terminal-green); }
+  .text-accent { color: var(--color-accent); }
+  .bg-accent { background-color: var(--color-accent); }
+  .border-accent { border-color: var(--color-accent); }
 }

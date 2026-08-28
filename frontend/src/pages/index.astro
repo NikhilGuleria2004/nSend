@@ -4,56 +4,211 @@ import '../styles/global.css';
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>nsend // sender</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    [data-theme="light"] {
+      --color-bg: #ffffff;
+      --color-surface: #f5f5f5;
+      --color-surface-hover: #e5e5e5;
+      --color-border: #000000;
+      --color-border-subtle: #333333;
+      --color-text: #000000;
+      --color-text-muted: #666666;
+      --color-text-dim: #999999;
+      --color-accent: #000000;
+      --color-accent-hover: #333333;
+      --color-amber: #000000;
+      --color-red: #000000;
+      --font-family-sans: 'Courier New', Courier, monospace;
+      --font-family-mono: 'Courier New', Courier, monospace;
+    }
+    [data-theme="dark"] {
+      --color-bg: #000000;
+      --color-surface: #0a0a0a;
+      --color-surface-hover: #1a1a1a;
+      --color-border: #ffffff;
+      --color-border-subtle: #888888;
+      --color-text: #ffffff;
+      --color-text-muted: #aaaaaa;
+      --color-text-dim: #666666;
+      --color-accent: #ffffff;
+      --color-accent-hover: #cccccc;
+      --color-amber: #ffffff;
+      --color-red: #ffffff;
+      --font-family-sans: 'Courier New', Courier, monospace;
+      --font-family-mono: 'Courier New', Courier, monospace;
+    }
+    [data-theme="cream"] {
+      --color-bg: #f5f0e8;
+      --color-surface: #ebe5d9;
+      --color-surface-hover: #ddd5c5;
+      --color-border: #1a1a1a;
+      --color-border-subtle: #4a4a4a;
+      --color-text: #1a1a1a;
+      --color-text-muted: #666666;
+      --color-text-dim: #999999;
+      --color-accent: #1a1a1a;
+      --color-accent-hover: #4a4a4a;
+      --color-amber: #1a1a1a;
+      --color-red: #1a1a1a;
+      --font-family-sans: 'Courier New', Courier, monospace;
+      --font-family-mono: 'Courier New', Courier, monospace;
+    }
+    [data-theme="matrix"] {
+      --color-bg: #000000;
+      --color-surface: #001100;
+      --color-surface-hover: #002200;
+      --color-border: #00ff00;
+      --color-border-subtle: #008800;
+      --color-text: #00ff00;
+      --color-text-muted: #00cc00;
+      --color-text-dim: #006600;
+      --color-accent: #00ff00;
+      --color-accent-hover: #00cc00;
+      --color-amber: #00ff00;
+      --color-red: #00ff00;
+      --font-family-sans: 'Courier New', Courier, monospace;
+      --font-family-mono: 'Courier New', Courier, monospace;
+    }
+    [data-theme="amber"] {
+      --color-bg: #1a1400;
+      --color-surface: #2a1f00;
+      --color-surface-hover: #3d2e00;
+      --color-border: #ffaa00;
+      --color-border-subtle: #cc8800;
+      --color-text: #ffaa00;
+      --color-text-muted: #cc8800;
+      --color-text-dim: #996600;
+      --color-accent: #ffaa00;
+      --color-accent-hover: #ffcc33;
+      --color-amber: #ffaa00;
+      --color-red: #ffaa00;
+      --font-family-sans: 'Courier New', Courier, monospace;
+      --font-family-mono: 'Courier New', Courier, monospace;
+    }
+    [data-theme="brutalist"] {
+      --color-bg: #ffffff;
+      --color-surface: #ffffff;
+      --color-surface-hover: #f0f0f0;
+      --color-border: #000000;
+      --color-border-subtle: #000000;
+      --color-text: #000000;
+      --color-text-muted: #000000;
+      --color-text-dim: #666666;
+      --color-accent: #ff0000;
+      --color-accent-hover: #cc0000;
+      --color-amber: #0000ff;
+      --color-red: #0000ff;
+      --font-family-sans: 'Courier New', Courier, monospace;
+      --font-family-mono: 'Courier New', Courier, monospace;
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-terminal-bg text-terminal-text font-mono antialiased">
-  <div class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen bg-bg text-text antialiased relative overflow-x-hidden">
+  <div class="fixed top-0 left-0 right-0 z-50 bg-border">
+    <div class="flex items-center justify-between px-4 py-2">
+      <span class="text-xs font-mono text-bg">THEME</span>
+      <div class="flex gap-1">
+        <button onclick="setTheme('light')" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" data-theme-btn="light">LIGHT</button>
+        <button onclick="setTheme('dark')" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" data-theme-btn="dark">DARK</button>
+        <button onclick="setTheme('cream')" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" data-theme-btn="cream">CREAM</button>
+        <button onclick="setTheme('matrix')" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" data-theme-btn="matrix">MATRIX</button>
+        <button onclick="setTheme('amber')" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" data-theme-btn="amber">AMBER</button>
+        <button onclick="setTheme('brutalist')" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" data-theme-btn="brutalist">BRUTALIST</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 py-12 sm:py-16 mt-8">
     <div class="w-full max-w-2xl">
-      <div class="border border-terminal-border bg-terminal-surface">
-        <div class="flex items-center gap-2 px-4 py-2.5 border-b border-terminal-border">
-          <span class="w-2.5 h-2.5 rounded-full bg-terminal-red"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-terminal-amber"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-terminal-green"></span>
-          <span class="ml-3 text-[11px] text-terminal-text/50 tracking-wide">sender</span>
+      <div class="text-center mb-10 sm:mb-12">
+        <div class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 border-2 border-border mb-6">
+          <svg class="w-7 h-7 sm:w-8 sm:h-8 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M4 8h16M4 16h16M12 4l4 4-4 4M12 4L8 8l4 4" />
+          </svg>
+        </div>
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-text tracking-tight mb-4">Send files,<br class="sm:hidden" /> <span class="text-accent">peer-to-peer</span></h1>
+        <p class="text-sm sm:text-base md:text-lg text-text-muted max-w-md mx-auto leading-relaxed">Fast, private, direct browser transfer. No uploads, no storage, no limits.</p>
+      </div>
+
+      <div class="border-2 border-border bg-surface p-6 sm:p-8 md:p-10 space-y-6">
+        <div class="space-y-3">
+          <label class="flex items-center gap-2.5 text-sm font-medium text-text-muted">
+            <span class="text-accent">[+]</span>
+            Select files
+          </label>
+          <input type="file" id="files" multiple class="block w-full text-sm text-text-muted file:mr-3 file:py-2 file:px-4 file:border-2 file:border-border file:text-sm file:font-mono file:bg-surface file:text-text file:cursor-pointer cursor-pointer" />
         </div>
 
-        <div class="p-6 md:p-8 space-y-5">
-          <div class="space-y-1.5">
-            <h1 class="text-lg font-medium tracking-tight text-green">Send files, peer-to-peer</h1>
-            <p class="text-sm text-terminal-text/70 leading-relaxed max-w-lg">
-              Pick files, click <span class="text-green">Send</span>, share the link. Files stream directly to the receiver's browser — never stored anywhere in between.
-            </p>
-          </div>
+        <button id="send" class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 text-base font-bold text-bg bg-accent hover:bg-accent-hover border-2 border-border transition-colors">
+          <span>START TRANSFER</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
 
-          <div class="space-y-2">
-            <label class="block text-[11px] uppercase tracking-widest text-terminal-text/40">Select files</label>
-            <input type="file" id="files" multiple class="block w-full text-sm text-terminal-text/80 file:mr-3 file:py-1.5 file:px-3 file:border file:border-terminal-border file:text-[11px] file:font-normal file:bg-terminal-bg file:text-terminal-text hover:file:border-green file:cursor-pointer cursor-pointer file:transition-colors" />
-          </div>
-
-          <button id="send" class="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-normal text-terminal-bg bg-green hover:bg-green-dim transition-colors">
-            <span>Send</span>
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </button>
-
-          <div class="space-y-1.5 pt-1">
-            <div id="status" class="text-[13px] text-terminal-amber h-4"></div>
-            <div id="link" class="text-[13px] break-all"></div>
-          </div>
+        <div class="space-y-3 pt-1">
+          <div id="status" class="text-sm text-amber h-5 font-mono"></div>
+          <div id="link" class="text-sm break-all flex flex-col sm:flex-row sm:items-center gap-2"></div>
         </div>
+      </div>
 
-        <div class="px-6 py-2.5 border-t border-terminal-border bg-terminal-bg/50">
-          <p class="text-[10px] text-terminal-text/30 tracking-wide">server relays only signaling data (SDP/ICE) — file data is peer-to-peer</p>
+      <div class="mt-8 flex items-center justify-center gap-6 text-text-dim">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono">[E2E]</span>
+          <span class="text-xs">Encrypted</span>
+        </div>
+        <div class="w-1 h-1 bg-border"></div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono">[INF]</span>
+          <span class="text-xs">No limits</span>
+        </div>
+        <div class="w-1 h-1 bg-border hidden sm:block"></div>
+        <div class="hidden sm:flex items-center gap-2">
+          <span class="text-xs font-mono">[NOW]</span>
+          <span class="text-xs">Instant</span>
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('nsend-theme', theme);
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem('nsend-theme');
+      if (saved) {
+        setTheme(saved);
+      } else {
+        setTheme('light');
+      }
+    }
+
+    initTheme();
+
+    const buttons = document.querySelectorAll('[data-theme-btn]');
+    function updateActiveButton() {
+      const current = document.documentElement.getAttribute('data-theme');
+      buttons.forEach(btn => {
+        if (btn.getAttribute('data-theme-btn') === current) {
+          btn.classList.add('bg-text', 'text-bg');
+          btn.classList.remove('bg-bg', 'text-text');
+        } else {
+          btn.classList.remove('bg-text', 'text-bg');
+          btn.classList.add('bg-bg', 'text-text');
+        }
+      });
+    }
+    updateActiveButton();
+
     import { connectSignaling, newPeerConnection } from '../lib/rtc';
 
     const filesInput = document.getElementById('files') as HTMLInputElement;
@@ -67,16 +222,32 @@ import '../styles/global.css';
       const files = filesInput.files;
       if (!files || files.length === 0) {
         statusEl.textContent = 'Choose at least one file.';
-        statusEl.className = 'text-[13px] text-terminal-red h-4';
+        statusEl.className = 'text-sm text-red h-5 font-mono';
         return;
       }
       sendBtn.disabled = true;
 
       const room = crypto.randomUUID();
       const link = `${location.origin}/r?id=${room}`;
-      linkEl.innerHTML = `Share this link with the receiver: <a href="${link}" class="text-green underline underline-offset-2 hover:text-green-dim transition-colors">${link}</a>`;
+      linkEl.innerHTML = `Share this link with the receiver: <a href="${link}" class="text-accent underline hover:text-accent-hover transition-colors break-all font-mono">${link}</a><button id="copyBtn" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-mono text-text-muted bg-surface border-2 border-border hover:border-text hover:text-text transition-colors whitespace-nowrap flex-shrink-0">[COPY]</button>`;
+      const copyBtn = document.getElementById('copyBtn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(link);
+            copyBtn.textContent = '[COPIED]';
+            copyBtn.classList.add('bg-text', 'text-bg');
+            setTimeout(() => {
+              copyBtn.textContent = '[COPY]';
+              copyBtn.classList.remove('bg-text', 'text-bg');
+            }, 2000);
+          } catch {
+            copyBtn.textContent = '[FAIL]';
+          }
+        });
+      }
       statusEl.textContent = 'Waiting for the receiver to open the link…';
-      statusEl.className = 'text-[13px] text-terminal-amber h-4';
+      statusEl.className = 'text-sm text-amber h-5 font-mono';
 
       const ws = connectSignaling(room, 'sender');
       const pc = newPeerConnection();
@@ -101,13 +272,13 @@ import '../styles/global.css';
           if (candidate) await pc.addIceCandidate(candidate);
         } else if (msg.type === 'peer-left') {
           statusEl.textContent = 'Receiver disconnected.';
-          statusEl.className = 'text-[13px] text-terminal-red h-4';
+          statusEl.className = 'text-sm text-red h-5 font-mono';
         }
       };
 
       channel.onopen = async () => {
         statusEl.textContent = 'Connected. Sending…';
-        statusEl.className = 'text-[13px] text-green h-4';
+        statusEl.className = 'text-sm text-amber h-5 font-mono';
         const fileList = Array.from(files);
         channel.send(JSON.stringify({
           type: 'meta',
@@ -118,7 +289,7 @@ import '../styles/global.css';
         }
         channel.send(JSON.stringify({ type: 'done' }));
         statusEl.textContent = 'All files sent.';
-        statusEl.className = 'text-[13px] text-green h-4';
+        statusEl.className = 'text-sm text-accent h-5 font-mono';
       };
     });
 
