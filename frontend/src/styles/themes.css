@@ -11,8 +11,6 @@
   --color-accent-hover: #333333;
   --color-amber: #000000;
   --color-red: #000000;
-  --font-family-sans: 'Courier New', Courier, monospace;
-  --font-family-mono: 'Courier New', Courier, monospace;
 }
 [data-theme="dark"] {
   --color-bg: #000000;
@@ -27,8 +25,6 @@
   --color-accent-hover: #cccccc;
   --color-amber: #ffffff;
   --color-red: #ffffff;
-  --font-family-sans: 'Courier New', Courier, monospace;
-  --font-family-mono: 'Courier New', Courier, monospace;
 }
 [data-theme="cream"] {
   --color-bg: #f5f0e8;
@@ -43,8 +39,6 @@
   --color-accent-hover: #4a4a4a;
   --color-amber: #1a1a1a;
   --color-red: #1a1a1a;
-  --font-family-sans: 'Courier New', Courier, monospace;
-  --font-family-mono: 'Courier New', Courier, monospace;
 }
 [data-theme="matrix"] {
   --color-bg: #000000;
@@ -59,8 +53,6 @@
   --color-accent-hover: #00cc00;
   --color-amber: #00ff00;
   --color-red: #00ff00;
-  --font-family-sans: 'Courier New', Courier, monospace;
-  --font-family-mono: 'Courier New', Courier, monospace;
 }
 [data-theme="amber"] {
   --color-bg: #1a1400;
@@ -75,8 +67,6 @@
   --color-accent-hover: #ffcc33;
   --color-amber: #ffaa00;
   --color-red: #ffaa00;
-  --font-family-sans: 'Courier New', Courier, monospace;
-  --font-family-mono: 'Courier New', Courier, monospace;
 }
 [data-theme="brutalist"] {
   --color-bg: #ffffff;
@@ -91,6 +81,4 @@
   --color-accent-hover: #cc0000;
   --color-amber: #0000ff;
   --color-red: #0000ff;
-  --font-family-sans: 'Courier New', Courier, monospace;
-  --font-family-mono: 'Courier New', Courier, monospace;
 }

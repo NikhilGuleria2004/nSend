@@ -8,14 +8,19 @@ import '../styles/themes.css';
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>nsend // sender</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script is:inline>
+    (function() {
+      const saved = localStorage.getItem('nsend-theme');
+      if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    })();
+  </script>
 </head>
 <body class="min-h-screen bg-bg text-text antialiased relative overflow-x-hidden">
   <div class="fixed top-0 left-0 right-0 z-50 bg-border">
     <div class="flex items-center justify-between px-4 py-2">
-      <span class="text-xs font-mono text-bg">THEME</span>
+      <span class="text-xs font-mono text-bg">NSEND</span>
       <div class="flex gap-1">
         <button data-theme-btn="light" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">LIGHT</button>
         <button data-theme-btn="dark" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">DARK</button>
@@ -85,17 +90,6 @@ import '../styles/themes.css';
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('nsend-theme', theme);
     }
-
-    function initTheme() {
-      const saved = localStorage.getItem('nsend-theme');
-      if (saved) {
-        setTheme(saved);
-      } else {
-        setTheme('light');
-      }
-    }
-
-    initTheme();
 
     const buttons = document.querySelectorAll('[data-theme-btn]');
     function updateActiveButton() {
