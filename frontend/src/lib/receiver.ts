@@ -77,7 +77,13 @@ export function initReceiver() {
           a.href = url;
           a.download = info.name;
           a.className = 'inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-accent hover:text-accent-hover transition-colors font-mono';
-          a.innerHTML = `<span>[↓]</span><span class="truncate">${info.name}</span>`;
+           const arrow = document.createElement('span');
+           arrow.textContent = '[↓]';
+           a.appendChild(arrow);
+           const nameSpan = document.createElement('span');
+           nameSpan.className = 'truncate';
+           nameSpan.textContent = info.name;
+           a.appendChild(nameSpan);
           const size = document.createElement('span');
           size.className = 'text-[10px] sm:text-xs text-text-dim font-mono sm:ml-auto';
           size.textContent = `${(info.size / 1024).toFixed(1)} KB`;

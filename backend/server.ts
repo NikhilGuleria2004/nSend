@@ -8,7 +8,11 @@ const app = new Hono();
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
 type Role = 'sender' | 'receiver';
-type Room = Partial<Record<Role, WSContext>>;
+type Room = {
+  sender?: WSContext;
+  receiver?: WSContext;
+  createdAt: number;
+};
 
 // Only signaling messages (SDP/ICE) ever pass through here — never file data.
 const rooms = new Map<string, Room>();
@@ -21,7 +25,7 @@ app.get(
 
     return {
       onOpen(_evt, ws) {
-        const peers = rooms.get(room) ?? {};
+        const peers = rooms.get(room) ?? { createdAt: Date.now() };
         peers[role] = ws;
         rooms.set(room, peers);
 
@@ -55,3 +59,15 @@ const server = serve({ fetch: app.fetch, port }, (info) => {
   console.log(`p2p-send listening on http://localhost:${info.port}`);
 });
 injectWebSocket(server);
+
+const CLEANUP_INTERVAL = 60_000;
+const ROOM_TTL = 30 * 60_000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, r] of rooms) {
+    if (now - r.createdAt > ROOM_TTL) {
+      rooms.delete(id);
+    }
+  }
+}, CLEANUP_INTERVAL);

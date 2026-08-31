@@ -168,18 +168,19 @@ export function initSender() {
 
   async function sendFile(channel: RTCDataChannel, file: File, index: number) {
     channel.send(JSON.stringify({ type: 'file-start', index }));
-    const buf = await file.arrayBuffer();
     let offset = 0;
-    while (offset < buf.byteLength) {
+    while (offset < file.size) {
       if (channel.bufferedAmount > 8 * CHUNK_SIZE) {
         await new Promise((r) => setTimeout(r, 10));
         continue;
       }
-      const slice = buf.slice(offset, offset + CHUNK_SIZE);
-      channel.send(slice);
-      sentBytes += slice.byteLength;
+      const end = Math.min(offset + CHUNK_SIZE, file.size);
+      const slice = file.slice(offset, end);
+      const buf = await slice.arrayBuffer();
+      channel.send(buf);
+      sentBytes += buf.byteLength;
       updateProgress();
-      offset += CHUNK_SIZE;
+      offset = end;
     }
     channel.send(JSON.stringify({ type: 'file-end', index }));
   }
