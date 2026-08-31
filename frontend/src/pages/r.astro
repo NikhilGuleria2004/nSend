@@ -1,6 +1,5 @@
 ---
 import '../styles/global.css';
-import '../styles/themes.css';
 ---
 <html lang="en">
 <head>
@@ -8,31 +7,10 @@ import '../styles/themes.css';
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>nsend // receiver</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <script is:inline>
-    (function() {
-      const saved = localStorage.getItem('nsend-theme');
-      if (saved) {
-        document.documentElement.setAttribute('data-theme', saved);
-      }
-    })();
-  </script>
 </head>
 <body class="min-h-screen bg-bg text-text antialiased relative overflow-x-hidden">
-  <div class="fixed top-0 left-0 right-0 z-50 bg-border">
-    <div class="flex items-center justify-between px-4 py-2">
-      <span class="text-xs font-mono text-bg">THEME</span>
-      <div class="flex gap-1">
-        <button data-theme-btn="light" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Light theme">LIGHT</button>
-        <button data-theme-btn="dark" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Dark theme">DARK</button>
-        <button data-theme-btn="cream" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Cream theme">CREAM</button>
-        <button data-theme-btn="matrix" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Matrix theme">MATRIX</button>
-        <button data-theme-btn="amber" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Amber theme">AMBER</button>
-        <button data-theme-btn="brutalist" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Brutalist theme">BRUTALIST</button>
-      </div>
-    </div>
-  </div>
 
-  <div class="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 py-12 sm:py-16 mt-8">
+  <div class="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 py-12 sm:py-16">
     <div class="w-full max-w-2xl">
       <div class="text-center mb-10 sm:mb-12">
         <div class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 border-2 border-border mb-6">
@@ -82,29 +60,6 @@ import '../styles/themes.css';
   </div>
 
   <script>
-    function setTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('nsend-theme', theme);
-    }
-
-    const buttons = document.querySelectorAll('[data-theme-btn]');
-    function updateActiveButton() {
-      const current = document.documentElement.getAttribute('data-theme');
-      buttons.forEach(btn => {
-        if (btn.getAttribute('data-theme-btn') === current) {
-          btn.classList.add('bg-text', 'text-bg');
-          btn.classList.remove('bg-bg', 'text-text');
-        } else {
-          btn.classList.remove('bg-text', 'text-bg');
-          btn.classList.add('bg-bg', 'text-text');
-        }
-      });
-    }
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => setTheme(btn.getAttribute('data-theme-btn')!));
-    });
-    updateActiveButton();
-
     import { initReceiver } from '../lib/receiver';
     initReceiver();
   </script>
