@@ -22,12 +22,12 @@ import '../styles/themes.css';
     <div class="flex items-center justify-between px-4 py-2">
       <span class="text-xs font-mono text-bg">NSEND</span>
       <div class="flex gap-1">
-        <button data-theme-btn="light" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">LIGHT</button>
-        <button data-theme-btn="dark" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">DARK</button>
-        <button data-theme-btn="cream" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">CREAM</button>
-        <button data-theme-btn="matrix" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">MATRIX</button>
-        <button data-theme-btn="amber" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">AMBER</button>
-        <button data-theme-btn="brutalist" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors">BRUTALIST</button>
+        <button data-theme-btn="light" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Light theme">LIGHT</button>
+        <button data-theme-btn="dark" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Dark theme">DARK</button>
+        <button data-theme-btn="cream" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Cream theme">CREAM</button>
+        <button data-theme-btn="matrix" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Matrix theme">MATRIX</button>
+        <button data-theme-btn="amber" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Amber theme">AMBER</button>
+        <button data-theme-btn="brutalist" class="theme-btn px-2 py-1 text-xs font-mono bg-bg text-text border border-border hover:border-text transition-colors" aria-label="Brutalist theme">BRUTALIST</button>
       </div>
     </div>
   </div>
@@ -46,14 +46,15 @@ import '../styles/themes.css';
 
       <div class="border-2 border-border bg-surface p-6 sm:p-8 md:p-10 space-y-6">
         <div class="space-y-3">
-          <label class="flex items-center gap-2.5 text-sm font-medium text-text-muted">
+          <label for="files" class="flex items-center gap-2.5 text-sm font-medium text-text-muted">
             <span class="text-accent">[+]</span>
             Select files
           </label>
-          <input type="file" id="files" multiple class="block w-full text-sm text-text-muted file:mr-3 file:py-2 file:px-4 file:border-2 file:border-border file:text-sm file:font-mono file:bg-surface file:text-text file:cursor-pointer cursor-pointer" />
+          <input type="file" id="files" multiple aria-label="Select files to send" class="block w-full text-sm text-text-muted file:mr-3 file:py-2 file:px-4 file:border-2 file:border-border file:text-sm file:font-mono file:bg-surface file:text-text file:cursor-pointer cursor-pointer" />
+          <div id="fileSummary" class="text-xs text-text-muted font-mono h-4"></div>
         </div>
 
-        <button id="send" class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 text-base font-bold text-bg bg-accent hover:bg-accent-hover border-2 border-border transition-colors">
+        <button id="send" class="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 text-base font-bold text-bg bg-accent hover:bg-accent-hover border-2 border-border transition-colors" aria-label="Start file transfer">
           <span>START TRANSFER</span>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
@@ -64,13 +65,16 @@ import '../styles/themes.css';
           <div class="w-full h-1.5 bg-surface border border-border">
             <div id="progressBar" class="h-full bg-accent transition-all duration-300" style="width: 0%"></div>
           </div>
-          <button id="cancelBtn" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono text-red border-2 border-border hover:bg-surface transition-colors">
+          <div class="flex items-center justify-end">
+            <span id="speed" class="text-[10px] text-text-dim font-mono"></span>
+          </div>
+          <button id="cancelBtn" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono text-red border-2 border-border hover:bg-surface transition-colors" aria-label="Cancel transfer">
             [CANCEL]
           </button>
         </div>
 
         <div class="space-y-3 pt-1">
-          <div id="status" class="text-sm text-amber h-5 font-mono"></div>
+          <div id="status" role="status" aria-live="polite" class="text-sm text-amber h-5 font-mono"></div>
           <div id="link" class="text-sm break-all flex flex-col sm:flex-row sm:items-center gap-2"></div>
         </div>
       </div>

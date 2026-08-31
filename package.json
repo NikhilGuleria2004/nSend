@@ -3,8 +3,10 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --root frontend",
+    "dev:backend": "tsx --watch backend/server.ts",
     "build": "astro build --root frontend",
-    "start": "tsx backend/server.ts"
+    "start": "tsx backend/server.ts",
+    "test": "vitest run --root backend"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
@@ -17,6 +19,7 @@
     "@types/node": "^26.4.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
   }
 }

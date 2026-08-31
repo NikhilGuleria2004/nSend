@@ -11,10 +11,41 @@ export function initSender() {
   const progressArea = document.getElementById('progressArea') as HTMLElement | null;
   const progressBar = document.getElementById('progressBar') as HTMLElement | null;
   const cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement | null;
+  const fileSummaryEl = document.getElementById('fileSummary') as HTMLElement | null;
+
+  if (typeof RTCPeerConnection === 'undefined' || typeof RTCDataChannel === 'undefined' || typeof WebSocket === 'undefined') {
+    const statusEl2 = document.getElementById('status') as HTMLElement;
+    statusEl2.textContent = 'Your browser does not support peer-to-peer transfers.';
+    statusEl2.className = 'text-sm text-red font-mono';
+    sendBtn.disabled = true;
+    return;
+  }
+
+  filesInput.addEventListener('change', () => {
+    const files = filesInput.files;
+    if (!files || files.length === 0) {
+      if (fileSummaryEl) fileSummaryEl.textContent = '';
+      return;
+    }
+    const count = files.length;
+    const total = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+    const totalStr = total >= 1024 * 1024
+      ? `${(total / (1024 * 1024)).toFixed(1)} MB`
+      : total >= 1024
+        ? `${(total / 1024).toFixed(1)} KB`
+        : `${total} B`;
+    if (fileSummaryEl) fileSummaryEl.textContent = `${count} file${count !== 1 ? 's' : ''}, ${totalStr}`;
+  });
 
   let joinTimer: number;
   let totalBytes = 0;
   let sentBytes = 0;
+  let lastActivity = Date.now();
+  let idleTimer: number | undefined;
+  let speedTimer: number | undefined;
+  let lastSpeedBytes = 0;
+  let lastSpeedTime = Date.now();
+  let speedEl = document.getElementById('speed') as HTMLElement | null;
   let ws: WebSocket | null = null;
   let pc: RTCPeerConnection | null = null;
 
@@ -25,14 +56,42 @@ export function initSender() {
     }
   }
 
+  function updateSpeed() {
+    if (!speedEl || totalBytes === 0) return;
+    const now = Date.now();
+    const dt = now - lastSpeedTime;
+    if (dt > 0) {
+      const delta = sentBytes - lastSpeedBytes;
+      const bps = (delta / dt) * 1000;
+      let text: string;
+      if (bps >= 1024 * 1024) {
+        text = `${(bps / (1024 * 1024)).toFixed(1)} MB/s`;
+      } else {
+        text = `${(bps / 1024).toFixed(1)} KB/s`;
+      }
+      speedEl.textContent = text;
+    }
+    lastSpeedBytes = sentBytes;
+    lastSpeedTime = now;
+  }
+
   function reset() {
     window.clearTimeout(joinTimer);
+    if (idleTimer) {
+      window.clearInterval(idleTimer);
+      idleTimer = undefined;
+    }
+    if (speedTimer) {
+      window.clearInterval(speedTimer);
+      speedTimer = undefined;
+    }
     ws?.close();
     pc?.close();
     ws = null;
     pc = null;
     sendBtn.disabled = false;
     if (progressArea) progressArea.classList.add('hidden');
+    if (speedEl) speedEl.textContent = '';
     updateProgress();
   }
 
@@ -130,10 +189,16 @@ export function initSender() {
       } else if (msg.type === 'peer-left') {
         setStatus('Receiver disconnected.', 'text-red');
         sendBtn.disabled = false;
+      } else if (msg.type === 'peer-timeout') {
+        setStatus('Room will expire in 5 minutes. Complete your transfer soon.', 'text-amber');
       }
     };
 
     ws.onclose = () => {
+      if (speedTimer) {
+        window.clearInterval(speedTimer);
+        speedTimer = undefined;
+      }
       if (sentBytes < totalBytes && totalBytes > 0) {
         setStatus('Signaling connection closed.', 'text-red');
         sendBtn.disabled = false;
@@ -145,11 +210,24 @@ export function initSender() {
 
     channel.onopen = async () => {
       setStatus('Connected. Sending…', 'text-amber');
+      lastActivity = Date.now();
+      lastSpeedBytes = 0;
+      lastSpeedTime = Date.now();
+      speedTimer = window.setInterval(updateSpeed, 1000);
       const fileList = Array.from(files);
       channel.send(JSON.stringify({
         type: 'meta',
         files: fileList.map((f) => ({ name: f.name, size: f.size, type: f.type }))
       }));
+      idleTimer = window.setInterval(() => {
+        if (Date.now() - lastActivity > 60000) {
+          channel.close();
+          setStatus('Transfer stalled.', 'text-red');
+          sendBtn.disabled = false;
+          window.clearInterval(idleTimer);
+          idleTimer = undefined;
+        }
+      }, 10000);
       for (let i = 0; i < fileList.length; i++) {
         await sendFile(channel, fileList[i], i);
       }
@@ -159,6 +237,14 @@ export function initSender() {
     };
 
     channel.onclose = () => {
+      if (speedTimer) {
+        window.clearInterval(speedTimer);
+        speedTimer = undefined;
+      }
+      if (idleTimer) {
+        window.clearInterval(idleTimer);
+        idleTimer = undefined;
+      }
       if (sentBytes < totalBytes && totalBytes > 0) {
         setStatus('Transfer interrupted.', 'text-red');
         sendBtn.disabled = false;
@@ -179,9 +265,11 @@ export function initSender() {
       const buf = await slice.arrayBuffer();
       channel.send(buf);
       sentBytes += buf.byteLength;
+      lastActivity = Date.now();
       updateProgress();
       offset = end;
     }
     channel.send(JSON.stringify({ type: 'file-end', index }));
+    lastActivity = Date.now();
   }
 }

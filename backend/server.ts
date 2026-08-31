@@ -3,19 +3,20 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { createNodeWebSocket } from '@hono/node-ws';
 import type { WSContext } from 'hono/ws';
+import { fileURLToPath } from 'node:url';
 
-const app = new Hono();
-const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
-
-type Role = 'sender' | 'receiver';
-type Room = {
+export type Role = 'sender' | 'receiver';
+export type Room = {
   sender?: WSContext;
   receiver?: WSContext;
   createdAt: number;
+  warned?: boolean;
 };
 
-// Only signaling messages (SDP/ICE) ever pass through here — never file data.
-const rooms = new Map<string, Room>();
+export const app = new Hono();
+export const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+
+export const rooms = new Map<string, Room>();
 
 app.get(
   '/ws',
@@ -54,20 +55,41 @@ app.get(
 
 app.use('/*', serveStatic({ root: './dist' }));
 
-const port = Number(process.env.PORT) || 3000;
-const server = serve({ fetch: app.fetch, port }, (info) => {
-  console.log(`p2p-send listening on http://localhost:${info.port}`);
-});
-injectWebSocket(server);
-
-const CLEANUP_INTERVAL = 60_000;
-const ROOM_TTL = 30 * 60_000;
-
-setInterval(() => {
+export function cleanupRooms() {
   const now = Date.now();
   for (const [id, r] of rooms) {
     if (now - r.createdAt > ROOM_TTL) {
       rooms.delete(id);
     }
   }
+}
+
+const port = Number(process.env.PORT) || 3000;
+const CLEANUP_INTERVAL = 60_000;
+const ROOM_TTL = 30 * 60_000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, r] of rooms) {
+    if (now - r.createdAt > 25 * 60_000 && !r.warned) {
+      r.warned = true;
+      r.sender?.send(JSON.stringify({ type: 'peer-timeout' }));
+      r.receiver?.send(JSON.stringify({ type: 'peer-timeout' }));
+    }
+  }
+  for (const [id, r] of rooms) {
+    if (now - r.createdAt > ROOM_TTL) {
+      rooms.delete(id);
+    }
+  }
 }, CLEANUP_INTERVAL);
+
+const currentFile = fileURLToPath(import.meta.url);
+const isMain = process.argv[1] && currentFile === process.argv[1];
+
+if (isMain) {
+  const server = serve({ fetch: app.fetch, port }, (info) => {
+    console.log(`p2p-send listening on http://localhost:${info.port}`);
+  });
+  injectWebSocket(server);
+}
