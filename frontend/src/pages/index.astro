@@ -60,6 +60,15 @@ import '../styles/themes.css';
           </svg>
         </button>
 
+        <div id="progressArea" class="hidden space-y-2">
+          <div class="w-full h-1.5 bg-surface border border-border">
+            <div id="progressBar" class="h-full bg-accent transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <button id="cancelBtn" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-mono text-red border-2 border-border hover:bg-surface transition-colors">
+            [CANCEL]
+          </button>
+        </div>
+
         <div class="space-y-3 pt-1">
           <div id="status" class="text-sm text-amber h-5 font-mono"></div>
           <div id="link" class="text-sm break-all flex flex-col sm:flex-row sm:items-center gap-2"></div>

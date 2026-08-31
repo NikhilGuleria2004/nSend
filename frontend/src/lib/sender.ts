@@ -1,20 +1,59 @@
 import { connectSignaling, newPeerConnection } from './rtc';
 
 const CHUNK_SIZE = 16 * 1024;
+const JOIN_TIMEOUT = 60000;
 
 export function initSender() {
   const filesInput = document.getElementById('files') as HTMLInputElement;
   const sendBtn = document.getElementById('send') as HTMLButtonElement;
   const statusEl = document.getElementById('status') as HTMLElement;
   const linkEl = document.getElementById('link') as HTMLElement;
+  const progressArea = document.getElementById('progressArea') as HTMLElement | null;
+  const progressBar = document.getElementById('progressBar') as HTMLElement | null;
+  const cancelBtn = document.getElementById('cancelBtn') as HTMLButtonElement | null;
+
+  let joinTimer: number;
+  let totalBytes = 0;
+  let sentBytes = 0;
+  let ws: WebSocket | null = null;
+  let pc: RTCPeerConnection | null = null;
+
+  function updateProgress() {
+    if (progressBar && totalBytes > 0) {
+      const pct = Math.min(100, (sentBytes / totalBytes) * 100).toFixed(1);
+      progressBar.style.width = `${pct}%`;
+    }
+  }
+
+  function reset() {
+    window.clearTimeout(joinTimer);
+    ws?.close();
+    pc?.close();
+    ws = null;
+    pc = null;
+    sendBtn.disabled = false;
+    if (progressArea) progressArea.classList.add('hidden');
+    updateProgress();
+  }
+
+  function setStatus(text: string, type: string) {
+    statusEl.textContent = text;
+    statusEl.className = `text-sm ${type} h-5 font-mono`;
+  }
+
+  cancelBtn?.addEventListener('click', () => {
+    reset();
+    setStatus('Transfer cancelled.', 'text-red');
+    linkEl.innerHTML = '';
+  });
 
   sendBtn.addEventListener('click', async () => {
     const files = filesInput.files;
     if (!files || files.length === 0) {
-      statusEl.textContent = 'Choose at least one file.';
-      statusEl.className = 'text-sm text-red h-5 font-mono';
+      setStatus('Choose at least one file.', 'text-red');
       return;
     }
+    reset();
     sendBtn.disabled = true;
 
     const room = crypto.randomUUID();
@@ -36,16 +75,35 @@ export function initSender() {
         }
       });
     }
-    statusEl.textContent = 'Waiting for the receiver to open the link…';
-    statusEl.className = 'text-sm text-amber h-5 font-mono';
 
-    const ws = connectSignaling(room, 'sender');
-    const pc = newPeerConnection();
-    const channel = pc.createDataChannel('files');
-    channel.binaryType = 'arraybuffer';
+    totalBytes = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+    sentBytes = 0;
+    if (progressArea) progressArea.classList.remove('hidden');
+    updateProgress();
+
+    setStatus('Waiting for the receiver to open the link…', 'text-amber');
+
+    joinTimer = window.setTimeout(() => {
+      setStatus('Timed out waiting for receiver. Share the link again or try a different network.', 'text-red');
+      sendBtn.disabled = false;
+    }, JOIN_TIMEOUT);
+
+    ws = connectSignaling(room, 'sender');
+    pc = newPeerConnection();
+
+    pc.onconnectionstatechange = () => {
+      const state = pc?.connectionState;
+      if (state === 'failed') {
+        setStatus('Connection failed. Try again on a different network or use a TURN server.', 'text-red');
+        sendBtn.disabled = false;
+      } else if (state === 'disconnected') {
+        setStatus('Connection lost. The receiver may have disconnected.', 'text-red');
+        sendBtn.disabled = false;
+      }
+    };
 
     pc.onicecandidate = (e) => {
-      if (e.candidate) {
+      if (e.candidate && ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'signal', data: { candidate: e.candidate } }));
       }
     };
@@ -53,22 +111,40 @@ export function initSender() {
     ws.onmessage = async (evt) => {
       const msg = JSON.parse(evt.data);
       if (msg.type === 'peer-joined') {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        ws.send(JSON.stringify({ type: 'signal', data: { sdp: offer } }));
+        window.clearTimeout(joinTimer);
+        setStatus('Receiver joined. Connecting…', 'text-amber');
+        try {
+          const offer = await pc!.createOffer();
+          await pc!.setLocalDescription(offer);
+          if (ws?.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'signal', data: { sdp: offer } }));
+          }
+        } catch {
+          setStatus('Failed to create offer.', 'text-red');
+          sendBtn.disabled = false;
+        }
       } else if (msg.type === 'signal') {
         const { sdp, candidate } = msg.data;
-        if (sdp) await pc.setRemoteDescription(sdp);
-        if (candidate) await pc.addIceCandidate(candidate);
+        if (sdp && pc) await pc.setRemoteDescription(sdp).catch(() => {});
+        if (candidate && pc) await pc.addIceCandidate(candidate).catch(() => {});
       } else if (msg.type === 'peer-left') {
-        statusEl.textContent = 'Receiver disconnected.';
-        statusEl.className = 'text-sm text-red h-5 font-mono';
+        setStatus('Receiver disconnected.', 'text-red');
+        sendBtn.disabled = false;
       }
     };
 
+    ws.onclose = () => {
+      if (sentBytes < totalBytes && totalBytes > 0) {
+        setStatus('Signaling connection closed.', 'text-red');
+        sendBtn.disabled = false;
+      }
+    };
+
+    const channel = pc.createDataChannel('files');
+    channel.binaryType = 'arraybuffer';
+
     channel.onopen = async () => {
-      statusEl.textContent = 'Connected. Sending…';
-      statusEl.className = 'text-sm text-amber h-5 font-mono';
+      setStatus('Connected. Sending…', 'text-amber');
       const fileList = Array.from(files);
       channel.send(JSON.stringify({
         type: 'meta',
@@ -78,8 +154,15 @@ export function initSender() {
         await sendFile(channel, fileList[i], i);
       }
       channel.send(JSON.stringify({ type: 'done' }));
-      statusEl.textContent = 'All files sent.';
-      statusEl.className = 'text-sm text-accent h-5 font-mono';
+      setStatus('All files sent.', 'text-accent');
+      sendBtn.disabled = false;
+    };
+
+    channel.onclose = () => {
+      if (sentBytes < totalBytes && totalBytes > 0) {
+        setStatus('Transfer interrupted.', 'text-red');
+        sendBtn.disabled = false;
+      }
     };
   });
 
@@ -92,7 +175,10 @@ export function initSender() {
         await new Promise((r) => setTimeout(r, 10));
         continue;
       }
-      channel.send(buf.slice(offset, offset + CHUNK_SIZE));
+      const slice = buf.slice(offset, offset + CHUNK_SIZE);
+      channel.send(slice);
+      sentBytes += slice.byteLength;
+      updateProgress();
       offset += CHUNK_SIZE;
     }
     channel.send(JSON.stringify({ type: 'file-end', index }));

@@ -6,6 +6,8 @@ export function initReceiver() {
   const roomId = new URLSearchParams(location.search).get('id') ?? '';
   const statusEl = document.getElementById('status') as HTMLElement;
   const downloadsEl = document.getElementById('downloads') as HTMLElement;
+  const rxProgress = document.getElementById('rxProgress') as HTMLElement | null;
+  const rxProgressBar = document.getElementById('rxProgressBar') as HTMLElement | null;
 
   if (!roomId) {
     statusEl.textContent = 'No link id found. Ask the sender for a fresh link.';
@@ -13,14 +15,39 @@ export function initReceiver() {
     return;
   }
 
-  const ws = connectSignaling(roomId, 'receiver');
-  const pc = newPeerConnection();
-
   let meta: FileMeta[] = [];
   let chunks: ArrayBuffer[] = [];
+  let expectedBytes = 0;
+  let receivedBytes = 0;
+  let ws: WebSocket | null = null;
+  let pc: RTCPeerConnection | null = null;
+
+  function updateRxProgress() {
+    if (rxProgressBar && expectedBytes > 0) {
+      const pct = Math.min(100, (receivedBytes / expectedBytes) * 100).toFixed(1);
+      rxProgressBar.style.width = `${pct}%`;
+    }
+  }
+
+  function setStatus(text: string, type: string) {
+    statusEl.textContent = text;
+    statusEl.className = `text-sm ${type} font-mono`;
+  }
+
+  ws = connectSignaling(roomId, 'receiver');
+  pc = newPeerConnection();
+
+  pc.onconnectionstatechange = () => {
+    const state = pc?.connectionState;
+    if (state === 'failed') {
+      setStatus('Connection failed. The sender may need to use a TURN server or try a different network.', 'text-red');
+    } else if (state === 'disconnected') {
+      setStatus('Connection lost. The sender may have disconnected.', 'text-red');
+    }
+  };
 
   pc.onicecandidate = (e) => {
-    if (e.candidate) {
+    if (e.candidate && ws?.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'signal', data: { candidate: e.candidate } }));
     }
   };
@@ -33,8 +60,11 @@ export function initReceiver() {
         const control = JSON.parse(msg.data);
         if (control.type === 'meta') {
           meta = control.files;
-          statusEl.textContent = `Receiving ${meta.length} file(s)…`;
-          statusEl.className = 'text-sm text-accent font-mono';
+          expectedBytes = meta.reduce((sum, f) => sum + f.size, 0);
+          receivedBytes = 0;
+          if (rxProgress) rxProgress.classList.remove('hidden');
+          updateRxProgress();
+          setStatus(`Receiving ${meta.length} file(s)…`, 'text-accent');
         } else if (control.type === 'file-start') {
           chunks = [];
         } else if (control.type === 'file-end') {
@@ -56,11 +86,13 @@ export function initReceiver() {
           downloadsEl.appendChild(li);
           chunks = [];
         } else if (control.type === 'done') {
-          statusEl.textContent = 'All files received.';
-          statusEl.className = 'text-sm text-accent font-mono';
+          setStatus('All files received.', 'text-accent');
+          if (rxProgress) rxProgress.classList.add('hidden');
         }
       } else {
         chunks.push(msg.data as ArrayBuffer);
+        receivedBytes += (msg.data as ArrayBuffer).byteLength;
+        updateRxProgress();
       }
     };
   };
@@ -70,15 +102,20 @@ export function initReceiver() {
     if (msg.type === 'signal') {
       const { sdp, candidate } = msg.data;
       if (sdp) {
-        await pc.setRemoteDescription(sdp);
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        ws.send(JSON.stringify({ type: 'signal', data: { sdp: answer } }));
+        await pc!.setRemoteDescription(sdp);
+        const answer = await pc!.createAnswer();
+        await pc!.setLocalDescription(answer);
+        ws!.send(JSON.stringify({ type: 'signal', data: { sdp: answer } }));
       }
-      if (candidate) await pc.addIceCandidate(candidate);
+      if (candidate) await pc!.addIceCandidate(candidate).catch(() => {});
     } else if (msg.type === 'peer-left') {
-      statusEl.textContent = 'Sender disconnected.';
-      statusEl.className = 'text-sm text-red font-mono';
+      setStatus('Sender disconnected.', 'text-red');
+    }
+  };
+
+  ws.onclose = () => {
+    if (receivedBytes < expectedBytes && expectedBytes > 0) {
+      setStatus('Signaling connection closed. Transfer interrupted.', 'text-red');
     }
   };
 }

@@ -51,6 +51,9 @@ import '../styles/themes.css';
             Status
           </label>
           <div id="status" class="text-sm text-amber font-mono">Connecting…</div>
+          <div id="rxProgress" class="hidden w-full h-1.5 bg-surface border border-border">
+            <div id="rxProgressBar" class="h-full bg-accent transition-all duration-300" style="width: 0%"></div>
+          </div>
         </div>
 
         <div id="downloads" class="space-y-2"></div>
